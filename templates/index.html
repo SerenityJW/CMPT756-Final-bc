@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+    <title>node{{ node }}'s transactions</title>
+    </head>
+    <body>
+        <div>
+            <form method="get" action="5000">
+                <button type="submit">node-5000</button>
+            </form>
+            <form method="get" action="5001">
+                <button type="submit">node-5001</button>
+            </form>
+            <form method="get" action="5002">
+                <button type="submit">node-5002</button>
+            </form>
+        </div>
+        <h1>public keys</h1>
+        <p>{{pubkey}}</p>
+        <h1>private keys</h1>
+        <p>{{prikey}}</p>
+        <h1>blockchain</h1>
+        {% for i in bc%}
+        <table border="8">
+            <tr>
+              <td>Index</td>
+              <td>{{ i.index }}</td>
+            </tr>
+            <tr>
+              <td>Previous Hash</td>
+              <td>{{ i.previous_hash }}</td>
+            </tr>
+            <tr>
+              <td>Timestamp</td>
+              <td>{{ i.timestamp }}</td>
+            </tr>
+            <tr>
+              <td>Transactions</td>
+              <td>
+              {% for j in i.transactions%}
+                <table border="8">
+                    <tr>
+                      <td>Sender</td>
+                      <td>{{ j.sender }}</td>
+                    </tr>
+                    <tr>
+                      <td>Recipient</td>
+                      <td>{{ j.recipient }}</td>
+                    </tr>
+                    <tr>
+                      <td>Price</td>
+                      <td>{{ j.price }}</td>
+                    </tr>
+                    <tr>
+                      <td>product name</td>
+                      <td>{{ j.product_name }}</td>
+                    </tr>
+                     <tr>
+                      <td>amount</td>
+                      <td>{{ j.amount }}</td>
+                    </tr>
+                </table>
+                {% endfor %}
+              </td>
+            </tr>
+             <tr>
+              <td>Proof</td>
+              <td>{{ i.proof }}</td>
+            </tr>
+        </table>
+        {% endfor %}
+        <h1>open transactions</h1>
+
+        {% for k in opt%}
+        <table border="8">
+            <tr>
+              <td>Sender</td>
+              <td>{{ k.sender }}</td>
+            </tr>
+            <tr>
+              <td>Recipient</td>
+              <td>{{ k.recipient }}</td>
+            </tr>
+            <tr>
+              <td>Price</td>
+              <td>{{ k.price }}</td>
+            </tr>
+            <tr>
+              <td>product name</td>
+              <td>{{ k.product_name }}</td>
+            </tr>
+             <tr>
+              <td>amount</td>
+              <td>{{ k.amount }}</td>
+            </tr>
+        </table>
+        {% endfor %}
+
+        <h1>neighbor nodes</h1>
+        <p>{{peernode}}</p>
+
+    </body>
+</html>
