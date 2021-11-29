@@ -304,25 +304,25 @@ class Blockchain:
     def get_peer_nodes(self):
         return list(self.__peer_nodes)[:]
 
-    def update_blockchain(self):
-        tmp_blockchain = self.chain
-        # send the mined block to peer nodes
-        for node in self.__peer_nodes:
-            try:
-                url = f"http://{node}/chain"
-                response = requests.get(url)
-            except:
-                continue
-            node_chain = response.json()
-            node_chain = self.transfer_json(node_chain)
-            if tmp_blockchain[-1].index < node_chain[-1].index:
-
-                tmp_blockchain = node_chain
-            elif tmp_blockchain[-1].index == node_chain[-1].index and not tmp_blockchain[-1].transactions:
-                tmp_blockchain = node_chain
-        self.chain = tmp_blockchain
-        self.save_data()
-
+    # def update_blockchain(self):
+    #     tmp_blockchain = self.chain
+    #     # send the mined block to peer nodes
+    #     for node in self.__peer_nodes:
+    #         try:
+    #             url = f"http://{node}/chain"
+    #             response = requests.get(url)
+    #         except:
+    #             continue
+    #         node_chain = response.json()
+    #         node_chain = self.transfer_json(node_chain)
+    #         if tmp_blockchain[-1].index < node_chain[-1].index:
+    #
+    #             tmp_blockchain = node_chain
+    #         elif tmp_blockchain[-1].index == node_chain[-1].index and not tmp_blockchain[-1].transactions:
+    #             tmp_blockchain = node_chain
+    #     self.chain = tmp_blockchain
+    #     self.save_data()
+    #
     def transfer_json(self, blockchain_json):
         updated_blockchain = []
         for block in blockchain_json:

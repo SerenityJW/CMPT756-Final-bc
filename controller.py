@@ -64,15 +64,21 @@ class CtrlNode():
         respond = requests.post(f"{self.url}/broadcast-block")
         print(respond.json())
 
+    def disconnected(self):
+        respond = requests.get(f"{self.url}/nodes")
+        peer_nodes=respond.json()
+        for i in peer_nodes:
+            address=f"{i}/node/{self.url}"
+            respond = requests.delete(address)
 
 node5000 = CtrlNode(5000)
 node5001 = CtrlNode(5001)
 node5002 = CtrlNode(5002)
 if __name__ == "__main__":
 
-    node5000.load_wallet()
+    # node5000.load_wallet()
     # node5001.load_wallet()
-    # node5002.load_wallet()
+    node5002.load_wallet()
     # node5000.add_peer(5001)
     # node5000.add_peer(5002)
     # node5001.add_peer(5000)

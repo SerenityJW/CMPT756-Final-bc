@@ -162,7 +162,7 @@ def load_wallet():
     if wallet.load_keys():
         global blockchain
         blockchain = Blockchain(wallet.public_key, node_id)
-        blockchain.update_blockchain()
+        blockchain.resolve()
         response = {
             "public_key": wallet.public_key,
             "private_key": wallet.private_key,
