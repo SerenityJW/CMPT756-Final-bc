@@ -15,6 +15,7 @@ from block import Block
 from transaction import Transaction
 from wallet import Wallet
 
+
 class Blockchain:
     """The Blockchain class manages the chain of blocks as well as open transactions and the node on which it's running.
     
@@ -23,6 +24,7 @@ class Blockchain:
         :open_transactions (private): The list of open transactions
         :wallet_public_key: The connected node (which runs the blockchain).
     """
+
     def __init__(self, wallet_public_key, node_id):
         """The constructor of the Blockchain class."""
         # Our starting block for the blockchain
@@ -35,15 +37,16 @@ class Blockchain:
         self.node_id = node_id
         self.__peer_nodes = set()
         self.resolve_conflicts = False
-        
+
         self.load_data()
+
     # This turns the chain attribute into a property with a getter (the method below) and a setter (@chain.setter)
     @property
     def chain(self):
         return self.__chain[:]
 
     # The setter for the chain property
-    @chain.setter 
+    @chain.setter
     def chain(self, val):
         self.__chain = val
 
@@ -61,18 +64,14 @@ class Blockchain:
                 # open_transactions = file_content['ot']
                 blockchain = json.loads(file_content[0][:-1])
                 # We need to convert  the loaded data because Transactions should use OrderedDict
-                updated_blockchain = []
-                for block in blockchain:
-                    converted_tx = [Transaction(tx['sender'], tx['recipient'], tx['signature'], tx['amount'], tx['product_name'], tx['price']) for tx in block['transactions']]
-                    updated_block = Block(
-                        block['index'], block['previous_hash'], converted_tx, block['proof'], block['timestamp'])
-                    updated_blockchain.append(updated_block)
-                self.chain = updated_blockchain
+
+                self.chain = self.transfer_json(blockchain)
                 open_transactions = json.loads(file_content[1][:-1])
                 # We need to convert  the loaded data because Transactions should use OrderedDict
                 updated_transactions = []
                 for tx in open_transactions:
-                    updated_transaction = Transaction(tx['sender'], tx['recipient'], tx['signature'], tx['amount'], tx['product_name'], tx['price'])
+                    updated_transaction = Transaction(tx['sender'], tx['recipient'], tx['signature'], tx['amount'],
+                                                      tx['product_name'], tx['price'])
                     updated_transactions.append(updated_transaction)
                 self.__open_transactions = updated_transactions
                 peer_node = json.loads(file_content[2])
@@ -87,7 +86,8 @@ class Blockchain:
         try:
             with open(f"blockchain-{self.node_id}.txt", mode='w') as f:
                 saveable_chain = [block.__dict__ for block in [Block(block_el.index, block_el.previous_hash, [
-                    tx.__dict__ for tx in block_el.transactions], block_el.proof, block_el.timestamp) for block_el in self.__chain]]
+                    tx.__dict__ for tx in block_el.transactions], block_el.proof, block_el.timestamp) for block_el in
+                                                               self.__chain]]
                 f.write(json.dumps(saveable_chain))
                 f.write('\n')
                 saveable_tx = [tx.__dict__ for tx in self.__open_transactions]
@@ -114,30 +114,34 @@ class Blockchain:
         if sender == None:
             return None
         else:
-            participant = sender # might not be owner of this node / might be send by other node
+            participant = sender  # might not be owner of this node / might be send by other node
 
         if participant == self.wallet_public_key:
             print(f"participant is local wallet owner")
         else:
             print(f"participant is other node")
 
-    
         # Fetch a list of all sent coin amounts for the given person (empty lists are returned if the person was NOT the sender)
         # This fetches sent amounts of transactions that were already included in blocks of the blockchain
-        tx_sender = [[tx.amount for tx in block.transactions if tx.sender == participant and tx.product_name == product_name] for block in self.__chain]
+        tx_sender = [
+            [tx.amount for tx in block.transactions if tx.sender == participant and tx.product_name == product_name] for
+            block in self.__chain]
         # Fetch a list of all sent coin amounts for the given person (empty lists are returned if the person was NOT the sender)
         # This fetches sent amounts of open transactions (to avoid double spending)
         open_tx_sender = [tx.amount
-                        for tx in self.__open_transactions if tx.sender == participant and tx.product_name == product_name]
+                          for tx in self.__open_transactions if
+                          tx.sender == participant and tx.product_name == product_name]
         tx_sender.append(open_tx_sender)
         # print(tx_sender)
         amount_sent = reduce(lambda tx_sum, tx_amt: tx_sum + sum(tx_amt)
-                            if len(tx_amt) > 0 else tx_sum + 0, tx_sender, 0)
+        if len(tx_amt) > 0 else tx_sum + 0, tx_sender, 0)
         # This fetches received coin amounts of transactions that were already included in blocks of the blockchain
         # We ignore open transactions here because you shouldn't be able to spend coins before the transaction was confirmed + included in a block
-        tx_recipient = [[tx.amount for tx in block.transactions if tx.recipient == participant and tx.product_name == product_name] for block in self.__chain]
+        tx_recipient = [
+            [tx.amount for tx in block.transactions if tx.recipient == participant and tx.product_name == product_name]
+            for block in self.__chain]
         amount_received = reduce(lambda tx_sum, tx_amt: tx_sum + sum(tx_amt)
-                                if len(tx_amt) > 0 else tx_sum + 0, tx_recipient, 0)
+        if len(tx_amt) > 0 else tx_sum + 0, tx_recipient, 0)
         # Return the total balance
         return amount_received - amount_sent
 
@@ -196,7 +200,7 @@ class Blockchain:
         """Create a new block and add open transactions to it."""
         # Fetch the currently last block of the blockchain
         if self.wallet_public_key == None:
-            return None 
+            return None
         last_block = self.__chain[-1]
         # Hash the last block (=> to be able to compare it to the stored hash value)
         hashed_block = hash_block(last_block)
@@ -225,31 +229,34 @@ class Blockchain:
                 respond = requests.post(url, json={"block": converted_block})
                 if respond.status_code == 400 or respond.status_code == 500:
                     print("block declined, need resolving")
-                if respond.status_code == 409: # our local blockchain is invalid
+                if respond.status_code == 409:  # our local blockchain is invalid
                     self.resolve_conflicts = True
             except requests.exceptions.ConnectionError:
                 continue
         return block
 
     def add_block(self, block):
-        transactions = [Transaction(tx["sender"], tx["recipient"], tx["signature"],tx["amount"],tx["product_name"],tx["price"]) for tx in block["transactions"]]
+        transactions = [
+            Transaction(tx["sender"], tx["recipient"], tx["signature"], tx["amount"], tx["product_name"], tx["price"])
+            for tx in block["transactions"]]
         proof_is_valid = Verification.valid_proof(transactions, block["previous_hash"], block["proof"])
         hash_match = hash_block(self.chain[-1]) == block["previous_hash"]
         if not proof_is_valid or not hash_match:
             return False
-        
-        converted_block = Block(block["index"], block["previous_hash"], transactions, block["proof"], block["timestamp"])
+
+        converted_block = Block(block["index"], block["previous_hash"], transactions, block["proof"],
+                                block["timestamp"])
         self.__chain.append(converted_block)
-        
+
         # [Winston] Remove duplicate transactions
         stored_transactions = self.__open_transactions[:]
         for tx in block["transactions"]:
             for stored_transaction in stored_transactions:
                 if stored_transaction.sender == tx["sender"] and \
-                   stored_transaction.recipient == tx["recipient"] and \
-                   stored_transaction.amount == tx["amount"] and \
-                   stored_transaction.product_name == tx["product_name"] and \
-                   stored_transaction.price == tx["price"]: #same transaction (should also compare timestamp)
+                        stored_transaction.recipient == tx["recipient"] and \
+                        stored_transaction.amount == tx["amount"] and \
+                        stored_transaction.product_name == tx["product_name"] and \
+                        stored_transaction.price == tx["price"]:  # same transaction (should also compare timestamp)
                     try:
                         self.__open_transactions.remove(stored_transaction)
                     except ValueError:
@@ -257,7 +264,7 @@ class Blockchain:
 
         self.save_data()
         return True
-    
+
     def resolve(self):
         winner_chain = self.chain
         replace = False
@@ -266,24 +273,26 @@ class Blockchain:
             try:
                 response = requests.get(url)
                 node_chain = response.json()
-                node_chain = [Block(b["index"], b["previous_hash"], [Transaction(tx["sender"], tx["recipient"], tx["signature"], tx["amount"], tx["product_name"], tx["price"]) for tx in b["transactions"]], b["proof"], b["timestamp"]) for b in node_chain]
+                node_chain = [Block(b["index"], b["previous_hash"], [
+                    Transaction(tx["sender"], tx["recipient"], tx["signature"], tx["amount"], tx["product_name"],
+                                tx["price"]) for tx in b["transactions"]], b["proof"], b["timestamp"]) for b in
+                              node_chain]
                 node_chain_len = len(node_chain)
-                local_chain_len = len(winner_chain )
+                local_chain_len = len(winner_chain)
                 if node_chain_len > local_chain_len and Verification.verify_chain(node_chain):
                     winner_chain = node_chain
                     replace = True
             except requests.exceptions.ConnectionError:
                 continue
-        
-        self.resolve_conflicts = False    
-        self.chain = winner_chain 
+
+        self.resolve_conflicts = False
+        self.chain = winner_chain
         if replace == True:
             self.__open_transactions = []
-        
+
         self.save_data()
         return replace
 
-    
     def add_peer_node(self, node):
         self.__peer_nodes.add(node)
         self.save_data()
@@ -294,3 +303,33 @@ class Blockchain:
 
     def get_peer_nodes(self):
         return list(self.__peer_nodes)[:]
+
+    def update_blockchain(self):
+        tmp_blockchain = self.chain
+        # send the mined block to peer nodes
+        for node in self.__peer_nodes:
+            try:
+                url = f"http://{node}/chain"
+                response = requests.get(url)
+            except:
+                continue
+            node_chain = response.json()
+            node_chain = self.transfer_json(node_chain)
+            if tmp_blockchain[-1].index < node_chain[-1].index:
+
+                tmp_blockchain = node_chain
+            elif tmp_blockchain[-1].index == node_chain[-1].index and not tmp_blockchain[-1].transactions:
+                tmp_blockchain = node_chain
+        self.chain = tmp_blockchain
+        self.save_data()
+
+    def transfer_json(self, blockchain_json):
+        updated_blockchain = []
+        for block in blockchain_json:
+            converted_tx = [
+                Transaction(tx['sender'], tx['recipient'], tx['signature'], tx['amount'], tx['product_name'],
+                            tx['price']) for tx in block['transactions']]
+            updated_block = Block(
+                block['index'], block['previous_hash'], converted_tx, block['proof'], block['timestamp'])
+            updated_blockchain.append(updated_block)
+        return updated_blockchain

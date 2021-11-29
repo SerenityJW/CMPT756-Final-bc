@@ -60,7 +60,9 @@ class CtrlNode():
                 print \
                     (f"\t({self.public_key_port_map[t['sender']]}) sends {t['amount']} of {t['product_name']} to ({self.public_key_port_map[t['recipient']]})")
 
-
+    def block_broadcast(self):
+        respond = requests.post(f"{self.url}/broadcast-block")
+        print(respond.json())
 
 
 node5000 = CtrlNode(5000)
@@ -69,23 +71,28 @@ node5002 = CtrlNode(5002)
 if __name__ == "__main__":
 
     node5000.load_wallet()
-    node5001.load_wallet()
-    node5002.load_wallet()
-    node5000.add_peer(5001)
-    node5000.add_peer(5002)
-    node5001.add_peer(5000)
-    node5002.add_peer(5000)
-    node5000.send_transaction(True, 5000, 30, "apple", 0)
-    node5000.send_transaction(False, 5001, 10, "apple", 10)
-    node5000.send_transaction(False, 5002, 10, "apple", 10)
-    node5002.send_transaction(False, 5001, 5, "apple", 10)
-    # view chain
-    node5000.view_chain()
+    # node5001.load_wallet()
+    # node5002.load_wallet()
+    # node5000.add_peer(5001)
+    # node5000.add_peer(5002)
+    # node5001.add_peer(5000)
+    # node5002.add_peer(5000)
+    # node5001.add_peer(5002)
+    # # node5002.add_peer(5001)
+    # node5000.send_transaction(True, 5000, 30, "apple", 0)
+    # node5000.send_transaction(False, 5001, 10, "apple", 10)
+    # node5000.send_transaction(False, 5002, 10, "apple", 10)
+    # node5001.send_transaction(False, 5000, 5, "apple", 10)
+    # node5002.send_transaction(True, 5001, 5, "pear", 0)
+    # # view chain
+    # node5000.view_chain()
     # node5000.send_transaction(False, 5001, 10, "apple", 0)
-    node5000.view_open_transactions()
-    node5001.view_open_transactions()
-    node5000.mine()
-    node5001.mine()
-    node5002.mine()
-    node5000.view_open_transactions()
-    node5001.view_open_transactions()
+
+    # node5000.view_open_transactions()
+    # node5001.view_open_transactions()
+    # node5000.mine()
+    # node5001.mine()
+    # node5002.mine()
+    # # node5000.view_open_transactions()
+    # # node5001.view_open_transactions()
+    # node5000.block_broadcast()
